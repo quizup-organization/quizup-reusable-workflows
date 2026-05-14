@@ -43,5 +43,7 @@ runs:
         if [ -z "$CONFIG_FILE" ]; then
           CONFIG_FILE="${GITHUB_ACTION_PATH}/../../semantic-release/release.config.cjs"
         fi
-        cd /tmp/semantic-release
-        npx --no-install semantic-release --extends "$CONFIG_FILE"
+        CONFIG_FILE="$(realpath "$CONFIG_FILE")"
+
+        /tmp/semantic-release/node_modules/.bin/semantic-release \
+          --extends "$CONFIG_FILE"
