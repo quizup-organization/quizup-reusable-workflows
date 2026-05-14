@@ -27,27 +27,18 @@ runs:
   using: composite
   steps:
     - name: Setup Java with Maven server credentials
-      if: ${{ inputs.server-username != '' && inputs.server-password != '' }}
       uses: actions/setup-java@v4
       with:
         java-version: ${{ inputs.java-version }}
         distribution: ${{ inputs.distribution }}
         cache: ${{ inputs.cache }}
-        server-id: ${{ inputs.server-id }}
-        server-username: SERVER_USERNAME
-        server-password: SERVER_PASSWORD
-        settings-path: ${{ github.action_path }}/../../maven
-      env:
-        SERVER_USERNAME: ${{ inputs.server-username }}
-        SERVER_PASSWORD: ${{ inputs.server-password }}
 
-    - name: Setup Java without server credentials
-      if: ${{ inputs.server-username == '' || inputs.server-password == '' }}
-      uses: actions/setup-java@v4
-      with:
-        java-version: ${{ inputs.java-version }}
-        distribution: ${{ inputs.distribution }}
-        cache: ${{ inputs.cache }}
+    - name: Copy settings.xml to ~/.m2
+      if: ${{ inputs.server-username != '' && inputs.server-password != '' }}
+      shell: bash
+      run: |
+        mkdir -p ~/.m2
+        cp "${{ github.action_path }}/../../maven/settings.xml" ~/.m2/settings.xml
 
     - name: Export credentials to GITHUB_ENV
       if: ${{ inputs.server-username != '' && inputs.server-password != '' }}
