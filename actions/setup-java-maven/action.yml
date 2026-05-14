@@ -36,6 +36,7 @@ runs:
         server-id: ${{ inputs.server-id }}
         server-username: SERVER_USERNAME
         server-password: SERVER_PASSWORD
+        settings-path: ${{ github.action_path }}/../../maven
       env:
         SERVER_USERNAME: ${{ inputs.server-username }}
         SERVER_PASSWORD: ${{ inputs.server-password }}
