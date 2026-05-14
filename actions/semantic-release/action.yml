@@ -38,6 +38,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
+        NODE_PATH: /tmp/semantic-release/node_modules
       run: |
         CONFIG_FILE="${{ inputs.config-file }}"
         if [ -z "$CONFIG_FILE" ]; then
