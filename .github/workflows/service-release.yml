@@ -1,0 +1,113 @@
+name: Service Release
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        description: "Java version"
+        required: false
+        type: string
+        default: "25"
+      github-username:
+        description: "GitHub username used for GitHub Packages and GHCR authentication"
+        required: true
+        type: string
+      service-name:
+        description: "Service name (used for Docker image name and deploy target)"
+        required: true
+        type: string
+      port:
+        description: "Container port exposed by the service"
+        required: false
+        type: string
+        default: "8080"
+    secrets:
+      GITHUB_PASSWORD:
+        description: "GitHub token (PAT) for release, packages and repository_dispatch"
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Checkout reusable workflow assets
+        uses: actions/checkout@v4
+        with:
+          repository: quizup-organization/quizup-reusable-workflows
+          path: reusable-workflows
+          sparse-checkout: docker
+          token: ${{ secrets.GITHUB_PASSWORD }}
+
+      - name: Setup Java + Maven
+        uses: quizup-organization/quizup-reusable-workflows/actions/setup-java-maven@v1
+        with:
+          java-version: ${{ inputs.java-version }}
+          server-username: ${{ inputs.github-username }}
+          server-password: ${{ secrets.GITHUB_PASSWORD }}
+
+      - name: Semantic Release
+        id: release
+        uses: quizup-organization/quizup-reusable-workflows/actions/semantic-release@v1
+        with:
+          github-token: ${{ secrets.GITHUB_PASSWORD }}
+
+      - name: Get release version
+        if: steps.release.outcome == 'success'
+        id: version
+        run: |
+          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build JAR
+        if: steps.version.outputs.version
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          mvn versions:set -DnewVersion=${VERSION} -DgenerateBackupPoms=false
+          mvn -B package -DskipTests
+
+      - name: Find JAR
+        if: steps.version.outputs.version
+        id: jar
+        run: |
+          JAR=$(find . -path '*/target/*.jar' -name '*-infrastructure-*.jar' ! -name '*-plain.jar' | head -1)
+          if [ -z "$JAR" ]; then
+            JAR=$(find . -path '*/target/*.jar' ! -name '*-plain.jar' ! -name 'original-*' | head -1)
+          fi
+          echo "jar_path=${JAR}" >> "$GITHUB_OUTPUT"
+
+      - name: Build & Push Docker image
+        if: steps.version.outputs.version
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          SERVICE=${{ inputs.service-name }}
+          IMAGE=ghcr.io/quizup-organization/${SERVICE}:${VERSION}
+
+          cp ${{ steps.jar.outputs.jar_path }} app.jar
+          cp reusable-workflows/docker/Dockerfile.service Dockerfile
+
+          echo "${{ secrets.GITHUB_PASSWORD }}" | docker login ghcr.io -u ${{ inputs.github-username }} --password-stdin
+          docker build --build-arg PORT=${{ inputs.port }} --build-arg JAR_FILE=app.jar -t ${IMAGE} .
+          docker push ${IMAGE}
+
+      - name: Dispatch deploy to quizup-deploy
+        if: steps.version.outputs.version
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_PASSWORD }}
+          repository: quizup-organization/quizup-deploy
+          event-type: deploy
+          client-payload: |
+            {
+              "service": "${{ inputs.service-name }}",
+              "version": "${{ steps.version.outputs.version }}",
+              "image": "ghcr.io/quizup-organization/${{ inputs.service-name }}"
+            }
+

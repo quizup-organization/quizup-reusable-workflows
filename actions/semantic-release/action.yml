@@ -1,0 +1,44 @@
+name: Semantic Release
+description: Install and run semantic-release with the shared organization config.
+inputs:
+  node-version:
+    description: Node.js version
+    required: false
+    default: "22"
+  github-token:
+    description: GitHub token used by semantic-release
+    required: true
+  config-file:
+    description: Optional path to semantic-release config file
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Install semantic-release
+      shell: bash
+      run: |
+        npm install -g semantic-release \
+          @semantic-release/commit-analyzer \
+          @semantic-release/release-notes-generator \
+          @semantic-release/changelog \
+          @semantic-release/git \
+          @semantic-release/github \
+          conventional-changelog-conventionalcommits
+
+    - name: Run semantic-release
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        CONFIG_FILE="${{ inputs.config-file }}"
+        if [ -z "$CONFIG_FILE" ]; then
+          CONFIG_FILE="${GITHUB_ACTION_PATH}/../../semantic-release/release.config.cjs"
+        fi
+        npx semantic-release --extends "$CONFIG_FILE"
+

@@ -1,0 +1,50 @@
+name: Setup Java Maven (GitHub Packages)
+description: Configure Java + Maven cache and optional GitHub Packages credentials.
+inputs:
+  java-version:
+    description: Java version to install
+    required: false
+    default: "25"
+  distribution:
+    description: JDK distribution
+    required: false
+    default: temurin
+  cache:
+    description: Dependency cache strategy
+    required: false
+    default: maven
+  server-id:
+    description: Maven server id to write in settings.xml
+    required: false
+    default: github
+  server-username:
+    description: Username used by Maven/GitHub Packages
+    required: false
+  server-password:
+    description: Token used by Maven/GitHub Packages
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Setup Java with Maven server credentials
+      if: ${{ inputs.server-username != '' && inputs.server-password != '' }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ inputs.java-version }}
+        distribution: ${{ inputs.distribution }}
+        cache: ${{ inputs.cache }}
+        server-id: ${{ inputs.server-id }}
+        server-username: SERVER_USERNAME
+        server-password: SERVER_PASSWORD
+      env:
+        SERVER_USERNAME: ${{ inputs.server-username }}
+        SERVER_PASSWORD: ${{ inputs.server-password }}
+
+    - name: Setup Java without server credentials
+      if: ${{ inputs.server-username == '' || inputs.server-password == '' }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ inputs.java-version }}
+        distribution: ${{ inputs.distribution }}
+        cache: ${{ inputs.cache }}
+

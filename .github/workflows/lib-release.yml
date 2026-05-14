@@ -1,0 +1,51 @@
+name: Library Release
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        description: "Java version"
+        required: false
+        type: string
+        default: "25"
+      github-username:
+        description: "GitHub username used for GitHub Packages authentication"
+        required: true
+        type: string
+    secrets:
+      GITHUB_PASSWORD:
+        description: "GitHub token (PAT) used for release and GitHub Packages"
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Java + Maven
+        uses: quizup-organization/quizup-reusable-workflows/actions/setup-java-maven@v1
+        with:
+          java-version: ${{ inputs.java-version }}
+          server-username: ${{ inputs.github-username }}
+          server-password: ${{ secrets.GITHUB_PASSWORD }}
+
+      - name: Semantic Release
+        id: release
+        uses: quizup-organization/quizup-reusable-workflows/actions/semantic-release@v1
+        with:
+          github-token: ${{ secrets.GITHUB_PASSWORD }}
+
+      - name: Publish to GitHub Packages
+        if: steps.release.outcome == 'success'
+        run: |
+          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+          mvn versions:set -DnewVersion=${VERSION} -DgenerateBackupPoms=false
+          mvn -B deploy -DskipTests
+

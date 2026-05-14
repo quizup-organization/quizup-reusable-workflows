@@ -1,0 +1,38 @@
+name: Service CI
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        description: "Java version"
+        required: false
+        type: string
+        default: "25"
+      github-username:
+        description: "GitHub username used for GitHub Packages authentication"
+        required: true
+        type: string
+    secrets:
+      GITHUB_PASSWORD:
+        description: "GitHub token (PAT) used for GitHub Packages authentication"
+        required: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java + Maven
+        uses: quizup-organization/quizup-reusable-workflows/actions/setup-java-maven@v1
+        with:
+          java-version: ${{ inputs.java-version }}
+          server-username: ${{ inputs.github-username }}
+          server-password: ${{ secrets.GITHUB_PASSWORD }}
+
+      - name: Lint commit messages
+        uses: wagoid/commitlint-github-action@v6
+
+      - name: Build & Test
+        run: mvn -B verify
+

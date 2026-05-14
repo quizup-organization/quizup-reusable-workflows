@@ -1,0 +1,19 @@
+FROM eclipse-temurin:25-jre-alpine
+
+ARG PORT=8080
+ARG JAR_FILE=app.jar
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+
+COPY ${JAR_FILE} app.jar
+
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+
+EXPOSE ${PORT}
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
+

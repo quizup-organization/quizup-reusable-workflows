@@ -1,0 +1,85 @@
+name: Frontend Release
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js version"
+        required: false
+        type: string
+        default: "22"
+      github-username:
+        description: "GitHub username used for GHCR authentication"
+        required: true
+        type: string
+      service-name:
+        description: "Service name for Docker image and deploy target"
+        required: false
+        type: string
+        default: "frontend"
+    secrets:
+      GITHUB_PASSWORD:
+        description: "GitHub token (PAT) for release, image push and repository_dispatch"
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Checkout reusable workflow assets
+        uses: actions/checkout@v4
+        with:
+          repository: quizup-organization/quizup-reusable-workflows
+          path: reusable-workflows
+          sparse-checkout: docker
+          token: ${{ secrets.GITHUB_PASSWORD }}
+
+      - name: Semantic Release
+        id: release
+        uses: quizup-organization/quizup-reusable-workflows/actions/semantic-release@v1
+        with:
+          node-version: ${{ inputs.node-version }}
+          github-token: ${{ secrets.GITHUB_PASSWORD }}
+
+      - name: Get release version
+        if: steps.release.outcome == 'success'
+        id: version
+        run: |
+          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build & Push Docker image
+        if: steps.version.outputs.version
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          SERVICE=${{ inputs.service-name }}
+          IMAGE=ghcr.io/quizup-organization/${SERVICE}:${VERSION}
+
+          cp reusable-workflows/docker/Dockerfile.frontend Dockerfile
+
+          echo "${{ secrets.GITHUB_PASSWORD }}" | docker login ghcr.io -u ${{ inputs.github-username }} --password-stdin
+          docker build -t ${IMAGE} .
+          docker push ${IMAGE}
+
+      - name: Dispatch deploy to quizup-deploy
+        if: steps.version.outputs.version
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_PASSWORD }}
+          repository: quizup-organization/quizup-deploy
+          event-type: deploy
+          client-payload: |
+            {
+              "service": "${{ inputs.service-name }}",
+              "version": "${{ steps.version.outputs.version }}",
+              "image": "ghcr.io/quizup-organization/${{ inputs.service-name }}"
+            }
+
