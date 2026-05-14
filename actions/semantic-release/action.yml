@@ -23,7 +23,10 @@ runs:
     - name: Install semantic-release
       shell: bash
       run: |
-        npm install -g semantic-release \
+        mkdir -p /tmp/semantic-release
+        cd /tmp/semantic-release
+        npm install \
+          semantic-release \
           @semantic-release/commit-analyzer \
           @semantic-release/release-notes-generator \
           @semantic-release/changelog \
@@ -40,5 +43,5 @@ runs:
         if [ -z "$CONFIG_FILE" ]; then
           CONFIG_FILE="${GITHUB_ACTION_PATH}/../../semantic-release/release.config.cjs"
         fi
-        npx semantic-release --extends "$CONFIG_FILE"
-
+        cd /tmp/semantic-release
+        npx --no-install semantic-release --extends "$CONFIG_FILE"
