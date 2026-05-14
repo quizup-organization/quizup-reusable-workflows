@@ -29,9 +29,6 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,7 +44,7 @@ jobs:
           token: ${{ secrets.GITHUB_PASSWORD }}
 
       - name: Setup Java + Maven
-        uses: quizup-organization/quizup-reusable-workflows/actions/setup-java-maven@v1
+        uses: quizup-organization/quizup-reusable-workflows/actions/setup-java-maven@main
         with:
           java-version: ${{ inputs.java-version }}
           server-username: ${{ inputs.github-username }}
@@ -55,7 +52,7 @@ jobs:
 
       - name: Semantic Release
         id: release
-        uses: quizup-organization/quizup-reusable-workflows/actions/semantic-release@v1
+        uses: quizup-organization/quizup-reusable-workflows/actions/semantic-release@main
         with:
           github-token: ${{ secrets.GITHUB_PASSWORD }}
 

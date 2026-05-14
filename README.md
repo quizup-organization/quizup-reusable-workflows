@@ -36,30 +36,30 @@ Les workflows de release utilisent l'action composite `semantic-release` pour é
 
 | Repo                  | CI workflow     | Release workflow     |
 |-----------------------|-----------------|----------------------|
-| `quizup-dependencies` | `lib-ci.yml@v1` | `lib-release.yml@v1` |
-| `quizup-parent`       | `lib-ci.yml@v1` | `lib-release.yml@v1` |
-| `axon-distributed`    | `lib-ci.yml@v1` | `lib-release.yml@v1` |
-| `quizup-common`       | `lib-ci.yml@v1` | `lib-release.yml@v1` |
-| `quizup-starter`      | `lib-ci.yml@v1` | `lib-release.yml@v1` |
+| `quizup-dependencies` | `lib-ci.yml@main` | `lib-release.yml@main` |
+| `quizup-parent`       | `lib-ci.yml@main` | `lib-release.yml@main` |
+| `axon-distributed`    | `lib-ci.yml@main` | `lib-release.yml@main` |
+| `quizup-common`       | `lib-ci.yml@main` | `lib-release.yml@main` |
+| `quizup-starter`      | `lib-ci.yml@main` | `lib-release.yml@main` |
 
 ### Services (Docker + GitOps)
 
 | Repo                 | `service-name` | `port` | CI workflow         | Release workflow         |
 |----------------------|----------------|--------|---------------------|--------------------------|
-| `quizup-identity`    | `identity`     | `8085` | `service-ci.yml@v1` | `service-release.yml@v1` |
-| `quizup-theme`       | `theme`        | `8080` | `service-ci.yml@v1` | `service-release.yml@v1` |
-| `quizup-game`        | `game`         | `8080` | `service-ci.yml@v1` | `service-release.yml@v1` |
-| `quizup-matchmaking` | `matchmaking`  | `8080` | `service-ci.yml@v1` | `service-release.yml@v1` |
-| `quizup-challenge`   | `challenge`    | `8080` | `service-ci.yml@v1` | `service-release.yml@v1` |
-| `quizup-social`      | `social`       | `8080` | `service-ci.yml@v1` | `service-release.yml@v1` |
-| `quizup-profile`     | `profile`      | `8080` | `service-ci.yml@v1` | `service-release.yml@v1` |
-| `quizup-gateway`     | `gateway`      | `8080` | `service-ci.yml@v1` | `service-release.yml@v1` |
+| `quizup-identity`    | `identity`     | `8085` | `service-ci.yml@main` | `service-release.yml@main` |
+| `quizup-theme`       | `theme`        | `8080` | `service-ci.yml@main` | `service-release.yml@main` |
+| `quizup-game`        | `game`         | `8080` | `service-ci.yml@main` | `service-release.yml@main` |
+| `quizup-matchmaking` | `matchmaking`  | `8080` | `service-ci.yml@main` | `service-release.yml@main` |
+| `quizup-challenge`   | `challenge`    | `8080` | `service-ci.yml@main` | `service-release.yml@main` |
+| `quizup-social`      | `social`       | `8080` | `service-ci.yml@main` | `service-release.yml@main` |
+| `quizup-profile`     | `profile`      | `8080` | `service-ci.yml@main` | `service-release.yml@main` |
+| `quizup-gateway`     | `gateway`      | `8080` | `service-ci.yml@main` | `service-release.yml@main` |
 
 ### Frontend
 
 | Repo              | `service-name` | CI workflow          | Release workflow          |
 |-------------------|----------------|----------------------|---------------------------|
-| `quizup-frontend` | `frontend`     | `frontend-ci.yml@v1` | `frontend-release.yml@v1` |
+| `quizup-frontend` | `frontend`     | `frontend-ci.yml@main` | `frontend-release.yml@main` |
 
 ## Ordre de release initial des libs
 
@@ -92,7 +92,7 @@ propagée dans `quizup-dependencies`, les services downstream doivent être rebu
 
 - **SemVer strict** : chaque release crée un tag `vX.Y.Z` (ex: `v1.0.0`, `v1.1.0`)
 - **Tag glissant majeur** : `v1` pointe toujours vers le dernier `v1.x.x`
-- **Les wrappers dans chaque repo référencent `@v1`** pour bénéficier des patches sans modification
+- **Les wrappers dans chaque repo référencent `@main`** pour bénéficier des patches sans modification
 - **Breaking changes** (nouveau major `v2`) : les wrappers doivent être mis à jour manuellement
 
 ## Secrets requis
