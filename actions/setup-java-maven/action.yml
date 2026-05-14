@@ -34,8 +34,11 @@ runs:
         distribution: ${{ inputs.distribution }}
         cache: ${{ inputs.cache }}
         server-id: ${{ inputs.server-id }}
-        server-username: ${{ inputs.server-username }}
-        server-password: ${{ inputs.server-password }}
+        server-username: SERVER_USERNAME
+        server-password: SERVER_PASSWORD
+      env:
+        SERVER_USERNAME: ${{ inputs.server-username }}
+        SERVER_PASSWORD: ${{ inputs.server-password }}
 
     - name: Setup Java without server credentials
       if: ${{ inputs.server-username == '' || inputs.server-password == '' }}
