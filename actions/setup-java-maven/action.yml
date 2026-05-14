@@ -34,11 +34,8 @@ runs:
         distribution: ${{ inputs.distribution }}
         cache: ${{ inputs.cache }}
         server-id: ${{ inputs.server-id }}
-        server-username: SERVER_USERNAME
-        server-password: SERVER_PASSWORD
-      env:
-        SERVER_USERNAME: ${{ inputs.server-username }}
-        SERVER_PASSWORD: ${{ inputs.server-password }}
+        server-username: ${{ inputs.server-username }}
+        server-password: ${{ inputs.server-password }}
 
     - name: Setup Java without server credentials
       if: ${{ inputs.server-username == '' || inputs.server-password == '' }}
@@ -48,3 +45,9 @@ runs:
         distribution: ${{ inputs.distribution }}
         cache: ${{ inputs.cache }}
 
+    - name: Export credentials to GITHUB_ENV
+      if: ${{ inputs.server-username != '' && inputs.server-password != '' }}
+      shell: bash
+      run: |
+        echo "SERVER_USERNAME=${{ inputs.server-username }}" >> $GITHUB_ENV
+        echo "SERVER_PASSWORD=${{ inputs.server-password }}" >> $GITHUB_ENV
