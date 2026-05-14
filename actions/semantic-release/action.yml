@@ -8,6 +8,10 @@ inputs:
   github-token:
     description: GitHub token used by semantic-release
     required: true
+  release-profile:
+    description: Shared semantic-release profile to use (maven or npm)
+    required: false
+    default: "maven"
   config-file:
     description: Optional path to semantic-release config file
     required: false
@@ -30,7 +34,9 @@ runs:
           @semantic-release/commit-analyzer \
           @semantic-release/release-notes-generator \
           @semantic-release/changelog \
+          @semantic-release/exec \
           @semantic-release/git \
+          @semantic-release/npm \
           @semantic-release/github \
           conventional-changelog-conventionalcommits
 
@@ -42,7 +48,19 @@ runs:
       run: |
         CONFIG_FILE="${{ inputs.config-file }}"
         if [ -z "$CONFIG_FILE" ]; then
-          CONFIG_FILE="${GITHUB_ACTION_PATH}/../../semantic-release/release.config.cjs"
+          PROFILE="${{ inputs.release-profile }}"
+          case "$PROFILE" in
+            maven)
+              CONFIG_FILE="${GITHUB_ACTION_PATH}/../../semantic-release/release.maven.config.cjs"
+              ;;
+            npm)
+              CONFIG_FILE="${GITHUB_ACTION_PATH}/../../semantic-release/release.npm.config.cjs"
+              ;;
+            *)
+              echo "Unsupported release profile: $PROFILE" >&2
+              exit 1
+              ;;
+          esac
         fi
         CONFIG_FILE="$(realpath "$CONFIG_FILE")"
 

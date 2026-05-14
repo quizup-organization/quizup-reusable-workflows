@@ -54,6 +54,7 @@ jobs:
         id: release
         uses: quizup-organization/quizup-reusable-workflows/actions/semantic-release@main
         with:
+          release-profile: maven
           github-token: ${{ secrets.GITHUB_PASSWORD }}
 
       - name: Get release version
@@ -66,8 +67,6 @@ jobs:
       - name: Build JAR
         if: steps.version.outputs.version
         run: |
-          VERSION=${{ steps.version.outputs.version }}
-          mvn versions:set -DnewVersion=${VERSION} -DgenerateBackupPoms=false
           mvn -B package -DskipTests
 
       - name: Find JAR

@@ -25,7 +25,7 @@ Workflows GitHub Actions réutilisables pour l'organisation QuizUp.
 | Action             | Fichier                               | Description                                                                                                      |
 |--------------------|---------------------------------------|------------------------------------------------------------------------------------------------------------------|
 | `setup-java-maven` | `actions/setup-java-maven/action.yml` | Encapsule `actions/setup-java@v4` avec `server-id`, `server-username` et `server-password` pour GitHub Packages. |
-| `semantic-release` | `actions/semantic-release/action.yml` | Encapsule l'installation + l'exécution de semantic-release avec la config partagée de l'organisation.            |
+| `semantic-release` | `actions/semantic-release/action.yml` | Encapsule l'installation + l'exécution de semantic-release avec profils `maven`/`npm` partagés.                  |
 
 Cette action remplace la génération manuelle de `~/.m2/settings.xml` dans les workflows.
 Les workflows de release utilisent l'action composite `semantic-release` pour éviter la duplication des étapes Node/npm.
@@ -122,7 +122,15 @@ Chaque repo lib doit déclarer un `distributionManagement` dans son `pom.xml` :
 </distributionManagement>
 ```
 
-La configuration semantic-release est centralisée dans `semantic-release/release.config.cjs` et chargée directement par
-les reusable workflows.
+La configuration semantic-release est centralisée dans :
+
+- `semantic-release/release.maven.config.cjs` (profil Maven, mise a jour de `pom.xml`)
+- `semantic-release/release.npm.config.cjs` (profil npm, mise a jour de `package.json`/`package-lock.json`)
+- `semantic-release/release.config.cjs` (alias backward-compatible vers le profil Maven)
+
+Le profil Maven applique `versions:set` sur tous les modules Maven afin de propager automatiquement
+la version de release dans les `pom.xml`.
+
+Les reusable workflows selectionnent automatiquement le bon profil via l'input `release-profile` de l'action composite.
 
 Les repositories applicatifs n'ont plus besoin d'un `.releaserc.yml` local.

@@ -37,12 +37,11 @@ jobs:
         id: release
         uses: quizup-organization/quizup-reusable-workflows/actions/semantic-release@main
         with:
+          release-profile: maven
           github-token: ${{ secrets.GITHUB_PASSWORD }}
 
       - name: Publish to GitHub Packages
         if: steps.release.outcome == 'success'
         run: |
-          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
-          mvn versions:set -DnewVersion=${VERSION} -DgenerateBackupPoms=false
           mvn -B deploy -DskipTests
 

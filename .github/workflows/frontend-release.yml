@@ -44,6 +44,7 @@ jobs:
         uses: quizup-organization/quizup-reusable-workflows/actions/semantic-release@main
         with:
           node-version: ${{ inputs.node-version }}
+          release-profile: npm
           github-token: ${{ secrets.GITHUB_PASSWORD }}
 
       - name: Get release version
