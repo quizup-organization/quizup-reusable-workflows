@@ -19,6 +19,14 @@ module.exports = {
             {
                 prepareCmd:
                     "mvn versions:set -DnewVersion=${nextRelease.version} -DprocessAllModules=true -DgenerateBackupPoms=false",
+                publishCmd:
+                    "mvn -B deploy -DskipTests",
+                successCmd:
+                    "mvn -B versions:set -DnewVersion=${nextRelease.version}-SNAPSHOT " +
+                    "-DprocessAllModules=true -DgenerateBackupPoms=false " +
+                    "&& git add '**/pom.xml' " +
+                    "&& git commit -m \"chore: next development version ${nextRelease.version}-SNAPSHOT [skip ci]\" " +
+                    "&& git push origin HEAD",
             },
         ],
         [

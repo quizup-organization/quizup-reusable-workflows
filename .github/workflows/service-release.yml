@@ -64,11 +64,6 @@ jobs:
           VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
-      - name: Build JAR
-        if: steps.version.outputs.version
-        run: |
-          mvn -B package -DskipTests
-
       - name: Find JAR
         if: steps.version.outputs.version
         id: jar
