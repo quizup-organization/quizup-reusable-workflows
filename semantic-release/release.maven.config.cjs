@@ -24,9 +24,9 @@ module.exports = {
                 successCmd:
                     "mvn -B versions:set -DnewVersion=${nextRelease.version}-SNAPSHOT -DprocessAllModules=true -DgenerateBackupPoms=false " +
                     "&& find . -name 'pom.xml' -not -path '*/target/*' | xargs git add " +
-                    "&& git remote set-url origin \"https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git\" " +
+                    "&& git remote set-url origin \"https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git\" " +
                     "&& git commit -m \"chore: next development version ${nextRelease.version}-SNAPSHOT [skip ci]\" " +
-                    "&& git push origin HEAD"
+                    "&& git push origin HEAD",
             },
         ],
         [
