@@ -22,17 +22,14 @@ module.exports = {
                 publishCmd:
                     "mvn -B deploy -DskipTests",
                 successCmd:
-                    "mvn -B versions:set -DnewVersion=${nextRelease.version}-SNAPSHOT -DprocessAllModules=true -DgenerateBackupPoms=false " +
-                    "&& find . -name 'pom.xml' -not -path '*/target/*' | xargs git add " +
-                    "&& git commit -m \"chore: next development version ${nextRelease.version}-SNAPSHOT [skip ci]\" " +
-                    "&& git push origin HEAD",
+                    "mvn versions:set -DnewVersion=${nextRelease.version}-SNAPSHOT -DprocessAllModules=true -DgenerateBackupPoms=false "
             },
         ],
         [
             "@semantic-release/git",
             {
                 assets: ["CHANGELOG.md", "**/pom.xml"],
-                message: "chore(release): ${nextRelease.version} [skip ci]",
+                message: "chore(release): new version released [ ${nextRelease.version} ] and next development version [ ${VERSION}-SNAPSHOT ] [skip ci]",
             },
         ],
         "@semantic-release/github",
