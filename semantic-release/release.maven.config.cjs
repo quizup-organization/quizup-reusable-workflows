@@ -18,18 +18,22 @@ module.exports = {
             "@semantic-release/exec",
             {
                 prepareCmd:
-                    "mvn versions:set -DnewVersion=${nextRelease.version} -DprocessAllModules=true -DgenerateBackupPoms=false",
+                    "mvn -B versions:set -DnewVersion=${nextRelease.version} -DprocessAllModules=true -DgenerateBackupPoms=false",
                 publishCmd:
                     "mvn -B deploy -DskipTests",
                 successCmd:
-                    "mvn versions:set -DnewVersion=${nextRelease.version}-SNAPSHOT -DprocessAllModules=true -DgenerateBackupPoms=false "
+                    "mvn -B versions:set -DnewVersion=${nextRelease.version}-SNAPSHOT -DprocessAllModules=true -DgenerateBackupPoms=false " +
+                    "&& find . -name 'pom.xml' -not -path '*/target/*' | xargs git add " +
+                    "&& git remote set-url origin \"https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git\" " +
+                    "&& git commit -m \"chore: next development version ${nextRelease.version}-SNAPSHOT [skip ci]\" " +
+                    "&& git push origin HEAD"
             },
         ],
         [
             "@semantic-release/git",
             {
                 assets: ["CHANGELOG.md", "**/pom.xml"],
-                message: "chore(release): new version released [ ${nextRelease.version} ] and next development version [ ${VERSION}-SNAPSHOT ] [skip ci]",
+                message: "chore(release): ${nextRelease.version} [skip ci]"
             },
         ],
         "@semantic-release/github",
