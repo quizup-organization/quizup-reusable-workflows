@@ -22,9 +22,8 @@ module.exports = {
                 publishCmd:
                     "mvn -B deploy -DskipTests",
                 successCmd:
-                    "mvn -B versions:set -DnewVersion=${nextRelease.version}-SNAPSHOT " +
-                    "-DprocessAllModules=true -DgenerateBackupPoms=false " +
-                    "&& git add '**/pom.xml' " +
+                    "mvn -B versions:set -DnewVersion=${nextRelease.version}-SNAPSHOT -DprocessAllModules=true -DgenerateBackupPoms=false " +
+                    "&& find . -name 'pom.xml' -not -path '*/target/*' | xargs git add " +
                     "&& git commit -m \"chore: next development version ${nextRelease.version}-SNAPSHOT [skip ci]\" " +
                     "&& git push origin HEAD",
             },
