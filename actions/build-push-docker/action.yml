@@ -1,0 +1,69 @@
+name: Build & Push Docker image to GHCR
+description: Login GHCR, build avec labels OCI, push.
+
+inputs:
+  service-name:
+    description: "Nom du service (= nom de l'image)"
+    required: true
+  version:
+    description: "Version (tag)"
+    required: true
+  dockerfile:
+    description: "Variante du Dockerfile : 'frontend' ou 'service'"
+    required: false
+    default: "service"
+  extra-build-args:
+    description: "Build-args supplémentaires, un KEY=VALUE par ligne"
+    required: false
+    default: ""
+  github-username:
+    description: "Username GHCR"
+    required: true
+  github-password:
+    description: "Token GHCR"
+    required: true
+  repository:
+    description: "Repo appelant (owner/name) pour le label OCI source"
+    required: true
+
+outputs:
+  image:
+    description: "Référence image poussée (sans tag)"
+    value: ${{ steps.meta.outputs.image }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve image reference
+      id: meta
+      shell: bash
+      run: |
+        echo "image=ghcr.io/quizup-organization/${{ inputs.service-name }}" >> "$GITHUB_OUTPUT"
+        echo "full=ghcr.io/quizup-organization/${{ inputs.service-name }}:${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+
+    - name: Login to GHCR
+      shell: bash
+      run: |
+        echo "${{ inputs.github-password }}" | \
+          docker login ghcr.io -u ${{ inputs.github-username }} --password-stdin
+
+    - name: Build & Push
+      shell: bash
+      run: |
+        DOCKERFILE="${{ github.action_path }}/../../docker/Dockerfile.${{ inputs.dockerfile }}"
+        IMAGE="${{ steps.meta.outputs.full }}"
+
+        EXTRA_ARGS=""
+        while IFS= read -r line; do
+          [ -n "$line" ] && EXTRA_ARGS="$EXTRA_ARGS --build-arg $line"
+        done <<< "${{ inputs.extra-build-args }}"
+
+        docker build \
+          $EXTRA_ARGS \
+          --label "org.opencontainers.image.source=https://github.com/${{ inputs.repository }}" \
+          --label "org.opencontainers.image.version=${{ inputs.version }}" \
+          -f "${DOCKERFILE}" \
+          -t "${IMAGE}" \
+          .
+
+        docker push "${IMAGE}"

@@ -76,17 +76,17 @@ jobs:
 
       - name: Build & Push Docker image
         if: steps.version.outputs.version
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          SERVICE=${{ inputs.service-name }}
-          IMAGE=ghcr.io/quizup-organization/${SERVICE}:${VERSION}
-
-          cp ${{ steps.jar.outputs.jar_path }} app.jar
-          cp reusable-workflows/docker/Dockerfile.service Dockerfile
-
-          echo "${{ secrets.GITHUB_PASSWORD }}" | docker login ghcr.io -u ${{ inputs.github-username }} --password-stdin
-          docker build --build-arg PORT=${{ inputs.port }} --build-arg JAR_FILE=app.jar -t ${IMAGE} .
-          docker push ${IMAGE}
+        uses: quizup-organization/quizup-reusable-workflows/actions/build-push-docker@main
+        with:
+          service-name: ${{ inputs.service-name }}
+          version: ${{ steps.version.outputs.version }}
+          dockerfile: service
+          extra-build-args: |
+            PORT=${{ inputs.port }}
+            JAR_FILE=app.jar
+          github-username: ${{ inputs.github-username }}
+          github-password: ${{ secrets.GITHUB_PASSWORD }}
+          repository: ${{ github.repository }}
 
       - name: Dispatch deploy to quizup-deploy
         if: steps.version.outputs.version
