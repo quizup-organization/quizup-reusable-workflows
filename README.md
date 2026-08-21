@@ -27,15 +27,15 @@ Workflows GitHub Actions réutilisables pour l'organisation QuizUp.
 | `setup-java-maven` | `actions/setup-java-maven/action.yml` | Encapsule `actions/setup-java@v4` avec `server-id`, `server-username` et `server-password` pour GitHub Packages. |
 | `semantic-release` | `actions/semantic-release/action.yml` | Encapsule l'installation + l'exécution de semantic-release avec profils `maven`/`npm` partagés.                  |
 
-Cette action remplace la génération manuelle de `~/.m2/settings.xml` dans les workflows.
-Les workflows de release utilisent l'action composite `semantic-release` pour éviter la duplication des étapes Node/npm.
+Cette action remplace la génération manuelle de `~/.m2/settings.xml` dans les workflows. Les workflows de release
+utilisent l'action composite `semantic-release` pour éviter la duplication des étapes Node/npm.
 
 ## Tableau repos × profil
 
 ### Libs (publish GitHub Packages)
 
-| Repo                  | CI workflow     | Release workflow     |
-|-----------------------|-----------------|----------------------|
+| Repo                  | CI workflow       | Release workflow       |
+|-----------------------|-------------------|------------------------|
 | `quizup-dependencies` | `lib-ci.yml@main` | `lib-release.yml@main` |
 | `quizup-parent`       | `lib-ci.yml@main` | `lib-release.yml@main` |
 | `axon-distributed`    | `lib-ci.yml@main` | `lib-release.yml@main` |
@@ -44,21 +44,20 @@ Les workflows de release utilisent l'action composite `semantic-release` pour é
 
 ### Services (Docker + GitOps)
 
-| Repo                 | `service-name` | `port` | CI workflow         | Release workflow         |
-|----------------------|----------------|--------|---------------------|--------------------------|
+| Repo                 | `service-name` | `port` | CI workflow           | Release workflow           |
+|----------------------|----------------|--------|-----------------------|----------------------------|
 | `quizup-identity`    | `identity`     | `8085` | `service-ci.yml@main` | `service-release.yml@main` |
 | `quizup-theme`       | `theme`        | `8080` | `service-ci.yml@main` | `service-release.yml@main` |
 | `quizup-game`        | `game`         | `8080` | `service-ci.yml@main` | `service-release.yml@main` |
 | `quizup-matchmaking` | `matchmaking`  | `8080` | `service-ci.yml@main` | `service-release.yml@main` |
 | `quizup-challenge`   | `challenge`    | `8080` | `service-ci.yml@main` | `service-release.yml@main` |
 | `quizup-social`      | `social`       | `8080` | `service-ci.yml@main` | `service-release.yml@main` |
-| `quizup-profile`     | `profile`      | `8080` | `service-ci.yml@main` | `service-release.yml@main` |
 | `quizup-gateway`     | `gateway`      | `8080` | `service-ci.yml@main` | `service-release.yml@main` |
 
 ### Frontend
 
-| Repo              | `service-name` | CI workflow          | Release workflow          |
-|-------------------|----------------|----------------------|---------------------------|
+| Repo              | `service-name` | CI workflow            | Release workflow            |
+|-------------------|----------------|------------------------|-----------------------------|
 | `quizup-frontend` | `frontend`     | `frontend-ci.yml@main` | `frontend-release.yml@main` |
 
 ## Ordre de release initial des libs
@@ -128,8 +127,8 @@ La configuration semantic-release est centralisée dans :
 - `semantic-release/release.npm.config.cjs` (profil npm, mise a jour de `package.json`/`package-lock.json`)
 - `semantic-release/release.config.cjs` (alias backward-compatible vers le profil Maven)
 
-Le profil Maven applique `versions:set` sur tous les modules Maven afin de propager automatiquement
-la version de release dans les `pom.xml`.
+Le profil Maven applique `versions:set` sur tous les modules Maven afin de propager automatiquement la version de
+release dans les `pom.xml`.
 
 Les reusable workflows selectionnent automatiquement le bon profil via l'input `release-profile` de l'action composite.
 
