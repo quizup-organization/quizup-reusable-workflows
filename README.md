@@ -34,13 +34,9 @@ utilisent l'action composite `semantic-release` pour éviter la duplication des 
 
 ### Libs (publish GitHub Packages)
 
-| Repo                  | CI workflow       | Release workflow       |
-|-----------------------|-------------------|------------------------|
-| `quizup-dependencies` | `lib-ci.yml@main` | `lib-release.yml@main` |
-| `quizup-parent`       | `lib-ci.yml@main` | `lib-release.yml@main` |
-| `axon-distributed`    | `lib-ci.yml@main` | `lib-release.yml@main` |
-| `quizup-common`       | `lib-ci.yml@main` | `lib-release.yml@main` |
-| `quizup-starter`      | `lib-ci.yml@main` | `lib-release.yml@main` |
+| Repo         | CI workflow       | Release workflow       |
+|--------------|-------------------|------------------------|
+| `quizup-sdk` | `lib-ci.yml@main` | `lib-release.yml@main` |
 
 ### Services (Docker + GitOps)
 
