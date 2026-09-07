@@ -18,11 +18,11 @@ module.exports = {
             "@semantic-release/exec",
             {
                 prepareCmd:
-                    "mvn -B versions:set -DnewVersion=${nextRelease.version} -DprocessAllModules=true -DgenerateBackupPoms=false",
+                    "mvn -B versions:set -Dproperty=quizup-sdk.version -DnewVersion=${nextRelease.version} -DprocessAllModules=true -DgenerateBackupPoms=false",
                 publishCmd:
                     "mvn -B deploy -DskipTests",
                 successCmd:
-                    "mvn -B versions:set -DnewVersion=${nextRelease.version}-SNAPSHOT -DprocessAllModules=true -DgenerateBackupPoms=false " +
+                    "mvn -B versions:set -Dproperty=quizup-sdk.version -DnewVersion=${nextRelease.version}-SNAPSHOT -DprocessAllModules=true -DgenerateBackupPoms=false " +
                     "&& find . -name 'pom.xml' -not -path '*/target/*' | xargs git add " +
                     "&& git remote set-url origin \"https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git\" " +
                     "&& git commit -m \"chore: next development version ${nextRelease.version}-SNAPSHOT [skip ci]\" " +

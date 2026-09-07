@@ -56,32 +56,32 @@ utilisent l'action composite `semantic-release` pour éviter la duplication des 
 |-------------------|----------------|------------------------|-----------------------------|
 | `quizup-frontend` | `frontend`     | `frontend-ci.yml@main` | `frontend-release.yml@main` |
 
-## Ordre de release initial des libs
+## Release du SDK (`quizup-sdk`)
 
-Les libs doivent être releasées **dans cet ordre strict** lors du bootstrap initial. Chaque lib dépend de la précédente
-via `quizup-dependencies` ou héritage `parent`.
+Le repo `quizup-sdk` est un agrégat Maven unique : tous les modules partagent **la même version**. Il
+contient :
 
 ```
-① quizup-dependencies   ← BOM, aucune dépendance interne
+① quizup-parent         ← BOM (hérite spring-boot-starter-parent), gère les versions des artifacts SDK
+                               via `quizup-sdk.version=${project.version}`
       ↓
-② quizup-parent         ← hérite spring-boot-starter-parent, importe quizup-dependencies
+② quizup-microservice   ← quizup-microservice-core (types partagés : search, exceptions, DTOs),
+                          quizup-microservice-autoconfigure, quizup-microservice-starter
       ↓
-③ axon-distributed      ← lib autonome, référencée dans quizup-dependencies
-      ↓
-④ quizup-common         ← types domaine partagés, référencé dans quizup-dependencies
-      ↓
-⑤ quizup-starter        ← Spring Boot Starter, dépend de quizup-common
+③ quizup-axon           ← quizup-axon-autoconfigure, quizup-axon-deadline, quizup-axon-query,
+                          quizup-axon-starter (rattaché à quizup-microservice-starter)
 ```
 
-**Après le bootstrap**, les libs peuvent être releasées indépendamment. Cependant, si une mise à jour de version est
-propagée dans `quizup-dependencies`, les services downstream doivent être rebuild pour récupérer les nouvelles versions.
+Une release de `quizup-sdk` publie l'ensemble des artifacts à la même version (ex: `v1.1.0` →
+`quizup-parent` 1.1.0, `quizup-microservice-starter` 1.1.0, `quizup-axon-starter` 1.1.0…). Les services
+downstream doivent être rebuild pour récupérer les nouvelles versions.
 
-### Procédure de bump de version d'une lib
+### Procédure de bump de version du SDK
 
-1. Release la lib (ex: `quizup-common` → `v1.2.0`)
-2. Mettre à jour la version dans `quizup-dependencies/pom.xml` (`quizup-common.version=1.2.0`)
-3. Release `quizup-dependencies` (→ `v1.x.0`)
-4. Les services se rebuild avec la nouvelle version au prochain push sur `main`
+1. Release `quizup-sdk` (ex: `v1.1.0`) — tous les modules sont publiés à cette version
+2. Mettre à jour la version du parent dans les `pom.xml` des services (`quizup-parent` → `1.1.0`) ;
+   les versions des artifacts SDK sont héritées du BOM, aucun tag de version n'est nécessaire
+3. Les services se rebuild avec la nouvelle version au prochain push sur `main`
 
 ## Politique de tags
 
