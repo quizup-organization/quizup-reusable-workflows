@@ -50,11 +50,6 @@ utilisent l'action composite `semantic-release` pour éviter la duplication des 
 | `quizup-social`      | `social`       | `8080` | `service-ci.yml@main` | `service-release.yml@main` |
 | `quizup-gateway`     | `gateway`      | `8080` | `service-ci.yml@main` | `service-release.yml@main` |
 
-### Frontend
-
-| Repo              | `service-name` | CI workflow            | Release workflow            |
-|-------------------|----------------|------------------------|-----------------------------|
-| `quizup-frontend` | `frontend`     | `frontend-ci.yml@main` | `frontend-release.yml@main` |
 
 ## Release du SDK (`quizup-sdk`)
 
