@@ -1,0 +1,78 @@
+name: Domain Bootstrap
+
+# Publie UNIQUEMENT le POM parent du service + son `*-domain` (contrats inter-services),
+# sans créer de tag/release et sans builder l'infrastructure. Sert à amorcer les dépendances
+# inter-services (domains) avant la première release d'un service.
+#
+# Idempotent : ne republie pas si `quizup-<service>-domain:<version>` existe déjà (GitHub
+# Packages refuse un re-deploy — 409).
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        description: "Java version"
+        required: false
+        type: string
+        default: "25"
+      github-username:
+        description: "GitHub username (GitHub Packages)"
+        required: true
+        type: string
+      service-name:
+        description: "Service name (ex. identity, theme, gateway, quizup-web)"
+        required: true
+        type: string
+      contracts-version:
+        description: "Version des contrats (domains) à publier"
+        required: true
+        type: string
+    secrets:
+      GITHUB_PASSWORD:
+        description: "GitHub token (PAT) avec read:packages + write:packages"
+        required: true
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Java + Maven
+        uses: quizup-organization/quizup-reusable-workflows/actions/setup-java-maven@main
+        with:
+          java-version: ${{ inputs.java-version }}
+          server-username: ${{ inputs.github-username }}
+          server-password: ${{ secrets.GITHUB_PASSWORD }}
+
+      - name: Check first publication
+        id: check
+        run: |
+          URL="https://maven.pkg.github.com/quizup-organization/${{ inputs.service-name }}/io/github/quizup/quizup-${{ inputs.service-name }}-domain/${{ inputs.contracts-version }}/quizup-${{ inputs.service-name }}-domain-${{ inputs.contracts-version }}.pom"
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" -u "${{ inputs.github-username }}:${{ secrets.GITHUB_PASSWORD }}" "$URL")
+          echo "HTTP $CODE"
+          if [ "$CODE" = "200" ]; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set contracts version
+        if: steps.check.outputs.published == 'false'
+        run: mvn -B versions:set -DnewVersion=${{ inputs.contracts-version }} -DprocessAllModules=true -DgenerateBackupPoms=false
+
+      - name: Publish parent POM
+        if: steps.check.outputs.published == 'false'
+        run: mvn -B -N deploy -DskipTests
+
+      - name: Publish domain
+        if: steps.check.outputs.published == 'false'
+        run: mvn -B -pl quizup-${{ inputs.service-name }}-domain deploy -DskipTests
+
+      - name: Outcome
+        run: |
+          if [ "${{ steps.check.outputs.published }}" = "true" ]; then
+            echo "Contrats déjà publiés (${{ inputs.contracts-version }}) — rien à faire."
+          else
+            echo "Contrats publiés : quizup-${{ inputs.service-name }} + quizup-${{ inputs.service-name }}-domain @ ${{ inputs.contracts-version }}"
+          fi
