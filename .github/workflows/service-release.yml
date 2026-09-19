@@ -88,12 +88,12 @@ jobs:
           github-password: ${{ secrets.GITHUB_PASSWORD }}
           repository: ${{ github.repository }}
 
-      - name: Dispatch deploy to quizup-deploy
+      - name: Dispatch deploy to quizup-gitops
         if: steps.version.outputs.version
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.GITHUB_PASSWORD }}
-          repository: quizup-organization/quizup-deploy
+          repository: quizup-organization/quizup-gitops
           event-type: deploy
           client-payload: |
             {
