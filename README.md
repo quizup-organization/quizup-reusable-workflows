@@ -9,9 +9,22 @@ Workflows GitHub Actions réutilisables pour l'organisation QuizUp.
 | **Library CI**       | `lib-ci.yml`           | Libs Maven     | Build + tests (`mvn verify`)                           |
 | **Library Release**  | `lib-release.yml`      | Libs Maven     | semantic-release + publish GitHub Packages             |
 | **Service CI**       | `service-ci.yml`       | Services Java  | Build + tests avec résolution deps GitHub Packages     |
-| **Service Release**  | `service-release.yml`  | Services Java  | semantic-release + Docker build/push + GitOps dispatch |
+| **Service Release**  | `service-release.yml`  | Services Java  | semantic-release + image arm64 GHCR (ArgoCD Image Updater) |
 | **Frontend CI**      | `frontend-ci.yml`      | Frontend React | Install + lint + build                                 |
-| **Frontend Release** | `frontend-release.yml` | Frontend React | semantic-release + Docker build/push + GitOps dispatch |
+| **Frontend Release** | `frontend-release.yml` | Frontend React | semantic-release + image GHCR (ArgoCD Image Updater)   |
+| **Domain Bootstrap** | `domain-bootstrap.yml` | Libs Maven     | Publie POM parent + `*-domain` (contrats), sans tag    |
+
+## Politique de release
+
+- **Release** (push `main`, hors `.github/workflows/**`/`*.md`) : semantic-release → publication
+  Maven (GitHub Packages) + image **linux/arm64** sur GHCR. Le `repository_dispatch` a été retiré :
+  le déploiement est assuré par **ArgoCD Image Updater** (git write-back du `newTag` dans
+  `quizup-gitops`).
+- **Contrats (domains)** : chaque service pin littéralement les `*-domain` qu'il consomme
+  (consumer-driven). Le `*-domain` est publié à la version de release du service.
+- **Amorçage** (`domain-bootstrap.yml` / `contracts.yml`) : publie **uniquement** le POM parent + le
+  `*-domain` à une version dédiée, sans tag, pour amorcer les dépendances inter-services (les
+  Services exposent le port 80, mais le déploiement Maven inter-services exige des domains publiés).
 
 ## Dockerfiles partagés
 
