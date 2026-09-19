@@ -19,12 +19,12 @@ module.exports = {
             {
                 prepareCmd:
                     "mvn -B versions:set -DnewVersion=${nextRelease.version} -DprocessAllModules=true -DgenerateBackupPoms=false " +
-                    "&& mvn -B -pl quizup-parent versions:set-property -Dproperty=quizup-sdk.version -DnewVersion=${nextRelease.version} -DgenerateBackupPoms=false",
+                    "&& if [ -d quizup-parent ]; then mvn -B -pl quizup-parent versions:set-property -Dproperty=quizup-sdk.version -DnewVersion=${nextRelease.version} -DgenerateBackupPoms=false; fi",
                 publishCmd:
                     "mvn -B deploy -DskipTests",
                 successCmd:
                     "mvn -B versions:set -DnewVersion=${nextRelease.version}-SNAPSHOT -DprocessAllModules=true -DgenerateBackupPoms=false " +
-                    "&& mvn -B -pl quizup-parent versions:set-property -Dproperty=quizup-sdk.version -DnewVersion=${nextRelease.version}-SNAPSHOT -DgenerateBackupPoms=false " +
+                    "&& if [ -d quizup-parent ]; then mvn -B -pl quizup-parent versions:set-property -Dproperty=quizup-sdk.version -DnewVersion=${nextRelease.version}-SNAPSHOT -DgenerateBackupPoms=false; fi " +
                     "&& find . -name 'pom.xml' -not -path '*/target/*' | xargs git add " +
                     "&& git remote set-url origin \"https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git\" " +
                     "&& git commit -m \"chore: next development version ${nextRelease.version}-SNAPSHOT [skip ci]\" " +
