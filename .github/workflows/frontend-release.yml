@@ -17,6 +17,31 @@ on:
         required: false
         type: string
         default: "frontend"
+      platforms:
+        description: "Target platforms (buildx --platform)"
+        required: false
+        type: string
+        default: "linux/arm64"
+      vite-api-url:
+        description: "VITE_API_URL inliné au build"
+        required: false
+        type: string
+        default: ""
+      vite-oidc-authority:
+        description: "VITE_OIDC_AUTHORITY inliné au build"
+        required: false
+        type: string
+        default: ""
+      vite-oidc-client-id:
+        description: "VITE_OIDC_CLIENT_ID inliné au build"
+        required: false
+        type: string
+        default: "web"
+      vite-oidc-redirect-uri:
+        description: "VITE_OIDC_REDIRECT_URI inliné au build"
+        required: false
+        type: string
+        default: ""
     secrets:
       GITHUB_PASSWORD:
         description: "GitHub token (PAT) for release, image push and repository_dispatch"
@@ -61,6 +86,12 @@ jobs:
           service-name: ${{ inputs.service-name }}
           version: ${{ steps.version.outputs.version }}
           dockerfile: frontend
+          platforms: ${{ inputs.platforms }}
+          extra-build-args: |
+            VITE_API_URL=${{ inputs.vite-api-url }}
+            VITE_OIDC_AUTHORITY=${{ inputs.vite-oidc-authority }}
+            VITE_OIDC_CLIENT_ID=${{ inputs.vite-oidc-client-id }}
+            VITE_OIDC_REDIRECT_URI=${{ inputs.vite-oidc-redirect-uri }}
           github-username: ${{ inputs.github-username }}
           github-password: ${{ secrets.GITHUB_PASSWORD }}
           repository: ${{ github.repository }}

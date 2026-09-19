@@ -1,5 +1,5 @@
 name: Build & Push Docker image to GHCR
-description: Login GHCR, build avec labels OCI, push.
+description: Login GHCR, build multi-arch (buildx) avec labels OCI, push.
 
 inputs:
   service-name:
@@ -12,6 +12,10 @@ inputs:
     description: "Variante du Dockerfile : 'frontend' ou 'service'"
     required: false
     default: "service"
+  platforms:
+    description: "Plateformes cibles (buildx --platform)"
+    required: false
+    default: "linux/arm64"
   extra-build-args:
     description: "Build-args supplémentaires, un KEY=VALUE par ligne"
     required: false
@@ -41,6 +45,12 @@ runs:
         echo "image=ghcr.io/quizup-organization/${{ inputs.service-name }}" >> "$GITHUB_OUTPUT"
         echo "full=ghcr.io/quizup-organization/${{ inputs.service-name }}:${{ inputs.version }}" >> "$GITHUB_OUTPUT"
 
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
     - name: Login to GHCR
       shell: bash
       run: |
@@ -58,12 +68,15 @@ runs:
           [ -n "$line" ] && EXTRA_ARGS="$EXTRA_ARGS --build-arg $line"
         done <<< "${{ inputs.extra-build-args }}"
 
-        docker build \
+        docker buildx build \
+          --platform "${{ inputs.platforms }}" \
           $EXTRA_ARGS \
           --label "org.opencontainers.image.source=https://github.com/${{ inputs.repository }}" \
           --label "org.opencontainers.image.version=${{ inputs.version }}" \
+          --cache-from type=gha \
+          --cache-to type=gha,mode=max \
+          --provenance=false \
           -f "${DOCKERFILE}" \
           -t "${IMAGE}" \
+          --push \
           .
-
-        docker push "${IMAGE}"

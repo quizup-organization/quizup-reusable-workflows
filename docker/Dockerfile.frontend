@@ -1,4 +1,5 @@
-FROM node:22-alpine AS build
+# --- Build stage : exécuté sur la plateforme du runner (BUILDPLATFORM) pour éviter l'émulation. ---
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 
 WORKDIR /app
 
@@ -6,8 +7,20 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
+
+# Configuration runtime inlinée par Vite au build.
+ARG VITE_API_URL
+ARG VITE_OIDC_AUTHORITY
+ARG VITE_OIDC_CLIENT_ID=web
+ARG VITE_OIDC_REDIRECT_URI
+ENV VITE_API_URL=$VITE_API_URL \
+    VITE_OIDC_AUTHORITY=$VITE_OIDC_AUTHORITY \
+    VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID \
+    VITE_OIDC_REDIRECT_URI=$VITE_OIDC_REDIRECT_URI
+
 RUN npm run build
 
+# --- Runtime stage : image cible (arm64 sur le cluster). ---
 FROM nginx:alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
@@ -32,4 +45,3 @@ EOF
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
-
