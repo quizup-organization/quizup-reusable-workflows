@@ -30,13 +30,13 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Checkout reusable workflow assets
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: quizup-organization/quizup-reusable-workflows
           path: reusable-workflows
@@ -73,6 +73,10 @@ jobs:
             JAR=$(find . -path '*/target/*.jar' ! -name '*-plain.jar' ! -name 'original-*' | head -1)
           fi
           echo "jar_path=${JAR}" >> "$GITHUB_OUTPUT"
+
+      - name: Stage JAR for Docker build
+        if: steps.version.outputs.version && steps.jar.outputs.jar_path
+        run: cp "${{ steps.jar.outputs.jar_path }}" app.jar
 
       - name: Build & Push Docker image
         if: steps.version.outputs.version

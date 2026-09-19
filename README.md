@@ -24,7 +24,7 @@ Workflows GitHub Actions réutilisables pour l'organisation QuizUp.
 
 | Action             | Fichier                               | Description                                                                                                      |
 |--------------------|---------------------------------------|------------------------------------------------------------------------------------------------------------------|
-| `setup-java-maven` | `actions/setup-java-maven/action.yml` | Encapsule `actions/setup-java@v4` avec `server-id`, `server-username` et `server-password` pour GitHub Packages. |
+| `setup-java-maven` | `actions/setup-java-maven/action.yml` | Encapsule `actions/setup-java@v5` avec `server-id`, `server-username` et `server-password` pour GitHub Packages. |
 | `semantic-release` | `actions/semantic-release/action.yml` | Encapsule l'installation + l'exécution de semantic-release avec profils `maven`/`npm` partagés.                  |
 
 Cette action remplace la génération manuelle de `~/.m2/settings.xml` dans les workflows. Les workflows de release
