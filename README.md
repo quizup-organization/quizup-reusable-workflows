@@ -85,18 +85,30 @@ downstream doivent être rebuild pour récupérer les nouvelles versions.
 - **Les wrappers dans chaque repo référencent `@main`** pour bénéficier des patches sans modification
 - **Breaking changes** (nouveau major `v2`) : les wrappers doivent être mis à jour manuellement
 
-## Secrets requis
+## Secrets & variables requis
 
-| Secret            | Scope               | Utilisé par                | Description                                                                                     |
-|-------------------|---------------------|----------------------------|-------------------------------------------------------------------------------------------------|
-| `GITHUB_PASSWORD` | Organization secret | Libs + Services + Frontend | Token PAT unique utilisé pour GitHub Packages, GHCR, semantic-release et `repository_dispatch`. |
+Les wrappers (`<repo>/.github/workflows/release.yml`) passent :
 
-> **Recommandation** : Configurer `GITHUB_PASSWORD` comme secret d'organisation dans **Settings > Secrets > Actions**
-> pour
-> qu'il soit disponible dans tous les repos sans duplication.
+- input `github-username` = `${{ vars.QUIZUP_GITHUB_USERNAME }}` → **ton username GitHub** (ex. `CNadjim`)
+- secret `GITHUB_PASSWORD` = `${{ secrets.QUIZUP_GITHUB_TOKEN }}` → **PAT classic** avec `repo` + `write:packages`
 
-Les workflows `lib-ci`, `service-*` et `lib-release` attendent aussi un input `github-username` (en pratique
-`${{ vars.QUIZUP_GITHUB_USERNAME }}` dans les wrappers).
+### Où les définir
+
+> ⚠️ Sur un plan **GitHub Free**, les secrets/variables d'**organisation** ne sont **pas**
+> utilisables par les repos **privés**. Il faut donc les définir **au niveau de chaque repo**
+> (Settings → Secrets and variables → Actions).
+
+| Repo(s) | `QUIZUP_GITHUB_USERNAME` (variable) | `QUIZUP_GITHUB_TOKEN` (secret) |
+|---|---|---|
+| `quizup-sdk` | ✅ | ✅ |
+| `quizup-identity`, `quizup-theme`, `quizup-game`, `quizup-social`, `quizup-matchmaking`, `quizup-profile`, `quizup-leaderboard`, `quizup-gateway` | ✅ | ✅ |
+| `quizup-web` | ✅ | ✅ |
+| `quizup-gitops` | — | ✅ (workflow `update-image.yml`) |
+
+Scopes du PAT : **`repo`** (release, tags, `repository_dispatch`) + **`write:packages`**
+(Maven GitHub Packages + images GHCR). Le `read:packages` seul ne suffit pas.
+
+> Alternative : rendre les repos **publics** → un unique secret/variable d'**organisation** suffit.
 
 ## Prérequis par repo
 
