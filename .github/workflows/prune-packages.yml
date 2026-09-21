@@ -2,6 +2,7 @@ name: Prune Packages & Caches
 
 # Réduit l'empreinte de stockage GitHub (allowance partagée artefacts + GitHub Packages) :
 #  - purge les anciennes versions d'images GHCR (en conservant les N plus récentes + les tags déployés) ;
+#  - purge les anciennes versions de packages Maven (en conservant les N plus récentes + versions protégées) ;
 #  - purge les caches Actions non accédés depuis > 7 jours (non facturés, mais limités à 10 GB/repo).
 #
 # Le repo est public : les minutes Actions de ce workflow sont gratuites.
@@ -16,6 +17,14 @@ on:
         description: "Versions d'image à conserver par package"
         required: false
         default: "1"
+      maven-keep:
+        description: "Versions Maven à conserver par package"
+        required: false
+        default: "2"
+      maven-protect:
+        description: "Versions Maven à ne jamais supprimer (CSV), ex. versions cross-service"
+        required: false
+        default: "0.0.1"
       dry-run:
         description: "Simuler sans supprimer (true/false)"
         required: false
@@ -63,6 +72,21 @@ jobs:
           package-type: container
           keep: ${{ inputs.keep || '1' }}
           protect-map: ${{ steps.deployed.outputs.map }}
+          dry-run: ${{ inputs.dry-run || 'false' }}
+
+  maven:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Purger les packages Maven
+        uses: ./actions/prune-packages
+        with:
+          token: ${{ secrets.QUIZUP_GITHUB_TOKEN }}
+          owner: quizup-organization
+          package-type: maven
+          keep: ${{ inputs.maven-keep || '2' }}
+          protect-tags: ${{ inputs.maven-protect || '0.0.1' }}
           dry-run: ${{ inputs.dry-run || 'false' }}
 
   caches:
