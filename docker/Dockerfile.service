@@ -7,9 +7,7 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
 
-COPY ${JAR_FILE} app.jar
-
-RUN chown -R appuser:appgroup /app
+COPY --chown=appuser:appgroup ${JAR_FILE} app.jar
 
 USER appuser
 
