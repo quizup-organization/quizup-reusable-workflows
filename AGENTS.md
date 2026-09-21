@@ -11,9 +11,13 @@ Fournir des **actions GitHub Actions réutilisables** pour tous les repos QuizUp
 - **build-push-docker** : build d'une image Docker + push (utilisé par tous les services)
 - **semantic-release** : release automatique versionnée
 - **setup-java-maven** : setup du toolchain Java/Maven (versions gérées par le BOM)
+- **prune-packages** : purge des anciennes versions GHCR (rétention stockage)
 
 + **Dockerfiles** partagés (`Dockerfile.service`, `Dockerfile.frontend`) et config
 **semantic-release** (versioning + changelog).
+
++ **Workflow planifié** `prune-packages.yml` : purge GHCR + caches Actions (allowance Free 0,5 GB
+partagée artefacts/Packages). Le `Dockerfile.service` utilise `COPY --chown` (un seul layer app).
 
 ---
 
@@ -24,7 +28,8 @@ quizup-reusable-workflows/
 ├── actions/
 │   ├── build-push-docker/   ← action composite : build + push image
 │   ├── semantic-release/    ← action composite : release versionnée
-│   └── setup-java-maven/    ← action composite : setup Java/Maven
+│   ├── setup-java-maven/    ← action composite : setup Java/Maven
+│   └── prune-packages/      ← action composite : purge versions GHCR
 ├── docker/
 │   ├── Dockerfile.service    ← Dockerfile générique microservice
 │   └── Dockerfile.frontend   ← Dockerfile frontend (nginx)

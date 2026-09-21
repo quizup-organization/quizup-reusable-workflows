@@ -1,0 +1,105 @@
+name: Prune GitHub Packages versions
+description: Supprime les anciennes versions de packages (containers GHCR) en conservant les N plus récentes et les tags protégés.
+
+inputs:
+  token:
+    description: "Token GitHub (PAT) avec read:packages + delete:packages"
+    required: true
+  owner:
+    description: "Organisation propriétaire des packages"
+    required: true
+  package-type:
+    description: "Type de package : container ou maven"
+    required: false
+    default: container
+  keep:
+    description: "Nombre de versions les plus récentes à conserver par package"
+    required: false
+    default: "1"
+  packages:
+    description: "Liste CSV de packages à traiter (vide = tous ceux du type)"
+    required: false
+    default: ""
+  protect-tags:
+    description: "Liste CSV de tags à ne jamais supprimer (ex. tags déployés)"
+    required: false
+    default: ""
+  dry-run:
+    description: "true = affiche les suppressions sans les exécuter"
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Prune ${{ inputs.package-type }} packages
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        OWNER: ${{ inputs.owner }}
+        PACKAGE_TYPE: ${{ inputs.package-type }}
+        KEEP: ${{ inputs.keep }}
+        PACKAGES: ${{ inputs.packages }}
+        PROTECT_TAGS: ${{ inputs.protect-tags }}
+        DRY_RUN: ${{ inputs.dry-run }}
+      run: |
+        set -euo pipefail
+
+        if ! [[ "$KEEP" =~ ^[0-9]+$ ]]; then
+          echo "::error::keep doit être un entier positif (reçu: $KEEP)"
+          exit 1
+        fi
+
+        if [ -z "$PACKAGES" ]; then
+          mapfile -t PKG_LIST < <(gh api --paginate "/orgs/$OWNER/packages?package_type=$PACKAGE_TYPE&per_page=100" --jq '.[].name')
+        else
+          IFS=',' read -ra PKG_LIST <<< "$PACKAGES"
+        fi
+
+        is_protected() {
+          local tags="$1"
+          [ -z "$PROTECT_TAGS" ] && return 1
+          [ -z "$tags" ] && return 1
+          local t p
+          IFS=',' read -ra _tags <<< "$tags"
+          IFS=',' read -ra _prot <<< "$PROTECT_TAGS"
+          for t in "${_tags[@]}"; do
+            for p in "${_prot[@]}"; do
+              [ "$t" = "$p" ] && return 0
+            done
+          done
+          return 1
+        }
+
+        total_deleted=0
+        for pkg in "${PKG_LIST[@]}"; do
+          [ -z "$pkg" ] && continue
+          echo "::group::Package $pkg"
+          versions=$(gh api --paginate "/orgs/$OWNER/packages/$PACKAGE_TYPE/$pkg/versions?per_page=100" \
+            --jq '.[] | "\(.created_at)\t\(.id)\t\(.metadata.container.tags // [] | join(","))"' | sort -r)
+          count=$(printf '%s\n' "$versions" | grep -c . || true)
+          echo "  $count versions trouvées (keep=$KEEP, dry-run=$DRY_RUN)"
+          idx=0
+          while IFS=$'\t' read -r created id tags; do
+            [ -z "$id" ] && continue
+            idx=$((idx + 1))
+            if [ "$idx" -le "$KEEP" ]; then
+              echo "  KEEP    #$idx $id ($created) [$tags]"
+              continue
+            fi
+            if is_protected "$tags"; then
+              echo "  PROTECT #$idx $id ($created) [$tags]"
+              continue
+            fi
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "  [dry-run] DELETE $id ($created) [$tags]"
+            else
+              echo "  DELETE  $id ($created) [$tags]"
+              gh api -X DELETE "/orgs/$OWNER/packages/$PACKAGE_TYPE/$pkg/versions/$id"
+              total_deleted=$((total_deleted + 1))
+            fi
+          done <<< "$versions"
+          echo "::endgroup::"
+        done
+
+        echo "Terminé. Versions supprimées : $total_deleted"

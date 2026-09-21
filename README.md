@@ -13,6 +13,7 @@ Workflows GitHub Actions réutilisables pour l'organisation QuizUp.
 | **Frontend CI**      | `frontend-ci.yml`      | Frontend React | Install + lint + build                                 |
 | **Frontend Release** | `frontend-release.yml` | Frontend React | semantic-release + image GHCR (ArgoCD Image Updater)   |
 | **Domain Bootstrap** | `domain-bootstrap.yml` | Libs Maven     | Publie POM parent + `*-domain` (contrats), sans tag    |
+| **Prune Packages**   | `prune-packages.yml`   | Maintenance    | Purge les anciennes versions GHCR + caches Actions      |
 
 ## Politique de release
 
@@ -39,9 +40,28 @@ Workflows GitHub Actions réutilisables pour l'organisation QuizUp.
 |--------------------|---------------------------------------|------------------------------------------------------------------------------------------------------------------|
 | `setup-java-maven` | `actions/setup-java-maven/action.yml` | Encapsule `actions/setup-java@v5` avec `server-id`, `server-username` et `server-password` pour GitHub Packages. |
 | `semantic-release` | `actions/semantic-release/action.yml` | Encapsule l'installation + l'exécution de semantic-release avec profils `maven`/`npm` partagés.                  |
+| `prune-packages`   | `actions/prune-packages/action.yml`   | Supprime les anciennes versions de packages (GHCR), conserve les N plus récentes + les tags protégés.           |
 
 Cette action remplace la génération manuelle de `~/.m2/settings.xml` dans les workflows. Les workflows de release
 utilisent l'action composite `semantic-release` pour éviter la duplication des étapes Node/npm.
+
+## Rétention du stockage (purge GHCR & caches)
+
+Le plan GitHub Free inclut **0,5 GB** de stockage partagé (*artefacts + GitHub Packages*). Les images
+GHCR poussées à chaque release s'y accumulent : `prune-packages.yml` (planifié chaque lundi +
+`workflow_dispatch`) purge les anciennes versions.
+
+- Les **N versions les plus récentes** par package sont conservées (`keep`, défaut `1`).
+- Les **tags déployés** (lus dans `quizup-gitops/.argocd-source-*.yaml`) ne sont **jamais** supprimés.
+- Les **caches Actions** non accédés depuis plus de 7 jours sont supprimés (enveloppe séparée de
+  10 GB/repo, non facturée, mais qui évince le cache Docker quand saturée).
+- `workflow_dispatch` avec `dry-run: true` (défaut) pour simuler avant purge réelle.
+
+> **Secret requis** : `QUIZUP_GITHUB_TOKEN` (PAT classic `repo` + `delete:packages`) au niveau du repo
+> `quizup-reusable-workflows` (repo public → les minutes du workflow planifié sont gratuites).
+>
+> Les paquets **Maven** ne sont pas purgés par défaut : les jars sont minuscules et les anciennes
+> versions de contrats (`*-domain`) peuvent être référencées par d'autres builds.
 
 ## Tableau repos × profil
 
