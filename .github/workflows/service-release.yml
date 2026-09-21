@@ -58,14 +58,13 @@ jobs:
           github-token: ${{ secrets.GITHUB_PASSWORD }}
 
       - name: Get release version
-        if: steps.release.outcome == 'success'
+        if: steps.release.outputs.released == 'true'
         id: version
         run: |
-          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "version=${{ steps.release.outputs.version }}" >> "$GITHUB_OUTPUT"
 
       - name: Find JAR
-        if: steps.version.outputs.version
+        if: steps.release.outputs.released == 'true'
         id: jar
         run: |
           JAR=$(find . -path '*/target/*.jar' -name '*-infrastructure-*.jar' ! -name '*-plain.jar' | head -1)
@@ -79,7 +78,7 @@ jobs:
         run: cp "${{ steps.jar.outputs.jar_path }}" app.jar
 
       - name: Build & Push Docker image
-        if: steps.version.outputs.version
+        if: steps.release.outputs.released == 'true' && steps.jar.outputs.jar_path
         uses: quizup-organization/quizup-reusable-workflows/actions/build-push-docker@main
         with:
           service-name: ${{ inputs.service-name }}

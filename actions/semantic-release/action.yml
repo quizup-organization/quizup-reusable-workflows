@@ -16,6 +16,15 @@ inputs:
     description: Optional path to semantic-release config file
     required: false
     default: ""
+
+outputs:
+  released:
+    description: "true si une nouvelle version a été publiée (nouveau tag créé)"
+    value: ${{ steps.semrel.outputs.released }}
+  version:
+    description: "Version publiée (sans préfixe v), vide si aucune release"
+    value: ${{ steps.semrel.outputs.version }}
+
 runs:
   using: composite
   steps:
@@ -41,6 +50,7 @@ runs:
           conventional-changelog-conventionalcommits@^8
 
     - name: Run semantic-release
+      id: semrel
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
@@ -64,5 +74,18 @@ runs:
         fi
         CONFIG_FILE="$(realpath "$CONFIG_FILE")"
 
+        PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
         /tmp/semantic-release/node_modules/.bin/semantic-release \
           --extends "$CONFIG_FILE"
+
+        NEW_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        if [ -n "$NEW_TAG" ] && [ "$PREV_TAG" != "$NEW_TAG" ]; then
+          echo "released=true" >> "$GITHUB_OUTPUT"
+          echo "version=${NEW_TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "Nouvelle release publiée : ${NEW_TAG#v}"
+        else
+          echo "released=false" >> "$GITHUB_OUTPUT"
+          echo "version=" >> "$GITHUB_OUTPUT"
+          echo "Aucune release publiée (aucun changement pertinent)."
+        fi
