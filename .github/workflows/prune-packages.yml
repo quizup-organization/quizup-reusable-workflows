@@ -22,9 +22,9 @@ on:
         required: false
         default: "2"
       maven-protect:
-        description: "Versions Maven à ne jamais supprimer (CSV), ex. versions cross-service"
+        description: "Versions Maven à ne jamais supprimer (CSV), ex. versions cross-service et parents référencés"
         required: false
-        default: "0.0.1"
+        default: "0.0.1,1.0.0"
       dry-run:
         description: "Simuler sans supprimer (true/false)"
         required: false
@@ -86,7 +86,7 @@ jobs:
           owner: quizup-organization
           package-type: maven
           keep: ${{ inputs.maven-keep || '2' }}
-          protect-tags: ${{ inputs.maven-protect || '0.0.1' }}
+          protect-tags: ${{ inputs.maven-protect || '0.0.1,1.0.0' }}
           dry-run: ${{ inputs.dry-run || 'false' }}
 
   caches:
