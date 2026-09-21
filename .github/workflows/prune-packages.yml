@@ -17,10 +17,9 @@ on:
         required: false
         default: "1"
       dry-run:
-        description: "Simuler sans supprimer"
+        description: "Simuler sans supprimer (true/false)"
         required: false
-        type: boolean
-        default: true
+        default: "true"
 
 concurrency:
   group: prune-packages
@@ -38,18 +37,23 @@ jobs:
           GH_TOKEN: ${{ secrets.QUIZUP_GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          TAGS=""
+          MAP=""
           paths=$(gh api "/repos/quizup-organization/quizup-gitops/git/trees/main?recursive=1" \
             --jq '.tree[].path | select(test("\\.argocd-source-.*\\.ya?ml$"))' 2>/dev/null || true)
           for p in $paths; do
             content=$(gh api "/repos/quizup-organization/quizup-gitops/contents/$p" \
               --jq '.content' 2>/dev/null | base64 -d 2>/dev/null || true)
-            tag=$(printf '%s' "$content" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
-            [ -n "$tag" ] && TAGS="$TAGS,$tag"
+            img=$(printf '%s' "$content" | grep -oE 'ghcr\.io/[^ :]+:[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
+            pkg=$(printf '%s' "$img" | sed -E 's#.*/##; s#:.*##')
+            tag=$(printf '%s' "$img" | sed -E 's#.*:##')
+            [ -n "$pkg" ] && [ -n "$tag" ] && MAP="${MAP}${pkg}=${tag}"$'\n'
           done
-          TAGS="${TAGS#,}"
-          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
-          echo "Tags déployés protégés : ${TAGS:-<aucun>}"
+          {
+            echo "map<<EOF"
+            printf '%s' "$MAP"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "Protection par package :"; printf '%s' "$MAP"
 
       - name: Purger les images GHCR
         uses: ./actions/prune-packages
@@ -58,8 +62,8 @@ jobs:
           owner: quizup-organization
           package-type: container
           keep: ${{ inputs.keep || '1' }}
-          protect-tags: ${{ steps.deployed.outputs.tags }}
-          dry-run: ${{ inputs.dry-run == 'true' }}
+          protect-map: ${{ steps.deployed.outputs.map }}
+          dry-run: ${{ inputs.dry-run || 'false' }}
 
   caches:
     runs-on: ubuntu-latest
@@ -68,7 +72,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.QUIZUP_GITHUB_TOKEN }}
           ORG: quizup-organization
-          DRY_RUN: ${{ inputs.dry-run == 'true' }}
+          DRY_RUN: ${{ inputs.dry-run || 'false' }}
         run: |
           set -euo pipefail
           cutoff=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)

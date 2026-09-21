@@ -21,7 +21,11 @@ inputs:
     required: false
     default: ""
   protect-tags:
-    description: "Liste CSV de tags à ne jamais supprimer (ex. tags déployés)"
+    description: "Liste CSV de tags à ne jamais supprimer, pour tous les packages (fallback)"
+    required: false
+    default: ""
+  protect-map:
+    description: "Protection par package, une ligne 'package=tag1,tag2' par package (ex. tags déployés)"
     required: false
     default: ""
   dry-run:
@@ -41,6 +45,7 @@ runs:
         KEEP: ${{ inputs.keep }}
         PACKAGES: ${{ inputs.packages }}
         PROTECT_TAGS: ${{ inputs.protect-tags }}
+        PROTECT_MAP: ${{ inputs.protect-map }}
         DRY_RUN: ${{ inputs.dry-run }}
       run: |
         set -euo pipefail
@@ -56,13 +61,23 @@ runs:
           IFS=',' read -ra PKG_LIST <<< "$PACKAGES"
         fi
 
+        declare -A PROTECT_BY_PKG
+        if [ -n "$PROTECT_MAP" ]; then
+          while IFS='=' read -r mp mt; do
+            [ -z "$mp" ] && continue
+            PROTECT_BY_PKG["$mp"]="${PROTECT_BY_PKG[$mp]:-}${PROTECT_BY_PKG[$mp]:+,}$mt"
+          done <<< "$PROTECT_MAP"
+        fi
+
         is_protected() {
-          local tags="$1"
-          [ -z "$PROTECT_TAGS" ] && return 1
+          local pkg="$1" tags="$2"
           [ -z "$tags" ] && return 1
+          local list="${PROTECT_BY_PKG[$pkg]:-}"
+          [ -n "$PROTECT_TAGS" ] && list="${list}${list:+,}$PROTECT_TAGS"
+          [ -z "$list" ] && return 1
           local t p
           IFS=',' read -ra _tags <<< "$tags"
-          IFS=',' read -ra _prot <<< "$PROTECT_TAGS"
+          IFS=',' read -ra _prot <<< "$list"
           for t in "${_tags[@]}"; do
             for p in "${_prot[@]}"; do
               [ "$t" = "$p" ] && return 0
@@ -87,7 +102,7 @@ runs:
               echo "  KEEP    #$idx $id ($created) [$tags]"
               continue
             fi
-            if is_protected "$tags"; then
+            if is_protected "$pkg" "$tags"; then
               echo "  PROTECT #$idx $id ($created) [$tags]"
               continue
             fi
