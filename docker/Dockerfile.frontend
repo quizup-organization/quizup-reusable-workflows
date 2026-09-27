@@ -31,6 +31,12 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # Le HTML ne doit jamais être mis en cache : après un déploiement big-bang, un
+    # `index.html` obsolète épingle le client sur un ancien bundle (surface morte).
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+    }
+
     location / {
         try_files $uri $uri/ /index.html;
     }
