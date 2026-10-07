@@ -16,8 +16,10 @@ Fournir des **actions GitHub Actions réutilisables** pour tous les repos QuizUp
 + **Dockerfiles** partagés (`Dockerfile.service`, `Dockerfile.frontend`) et config
 **semantic-release** (versioning + changelog).
 
-+ **Workflow planifié** `prune-packages.yml` : purge GHCR + caches Actions (allowance Free 0,5 GB
-partagée artefacts/Packages). Le `Dockerfile.service` utilise `COPY --chown` (un seul layer app).
++ **Workflow planifié** `prune-packages.yml` : purge GHCR + packages Maven + caches Actions
+(allowance Free 0,5 GB partagée artefacts/Packages). Toutes les versions de `quizup-parent` sont
+protégées : les POM parents restent référencés par les contrats déjà publiés (sinon la résolution
+transitive des builds casse). Le `Dockerfile.service` utilise `COPY --chown` (un seul layer app).
 
 ---
 

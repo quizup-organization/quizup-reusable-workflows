@@ -79,6 +79,27 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Les POM parents sont référencés par les contrats déjà publiés (ex. quizup-social-domain:4.0.0
+      # → quizup-parent:4.1.0) : leur suppression casse la résolution transitive des builds.
+      - name: Protéger toutes les versions de quizup-parent
+        id: maven-parents
+        env:
+          GH_TOKEN: ${{ secrets.QUIZUP_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          map=""
+          for pkg in io.github.quizup.quizup-parent; do
+            versions=$(gh api --paginate "/orgs/quizup-organization/packages/maven/$pkg/versions?per_page=100" \
+              --jq '.[].name' 2>/dev/null | sort -u | paste -sd, - || true)
+            [ -n "$versions" ] && map="${map}${pkg}=${versions}"$'\n'
+          done
+          {
+            echo "map<<EOF"
+            printf '%s' "$map"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "Protection parents Maven :"; printf '%s' "$map"
+
       - name: Purger les packages Maven
         uses: ./actions/prune-packages
         with:
@@ -87,6 +108,7 @@ jobs:
           package-type: maven
           keep: ${{ inputs.maven-keep || '2' }}
           protect-tags: ${{ inputs.maven-protect || '0.0.1,1.0.0' }}
+          protect-map: ${{ steps.maven-parents.outputs.map }}
           dry-run: ${{ inputs.dry-run || 'false' }}
 
   caches:
