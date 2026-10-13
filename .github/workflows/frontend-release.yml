@@ -27,6 +27,11 @@ on:
         required: false
         type: string
         default: ""
+      vite-bff-url:
+        description: "VITE_BFF_URL inliné au build (surface admin BFF, optionnel)"
+        required: false
+        type: string
+        default: ""
       vite-oidc-authority:
         description: "VITE_OIDC_AUTHORITY inliné au build"
         required: false
@@ -88,6 +93,7 @@ jobs:
           platforms: ${{ inputs.platforms }}
           extra-build-args: |
             VITE_API_URL=${{ inputs.vite-api-url }}
+            VITE_BFF_URL=${{ inputs.vite-bff-url }}
             VITE_OIDC_AUTHORITY=${{ inputs.vite-oidc-authority }}
             VITE_OIDC_CLIENT_ID=${{ inputs.vite-oidc-client-id }}
             VITE_OIDC_REDIRECT_URI=${{ inputs.vite-oidc-redirect-uri }}
