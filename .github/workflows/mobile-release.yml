@@ -142,7 +142,7 @@ jobs:
       - name: Publish per-push APK
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apk-${{ github.run_number }}
+          tag_name: apk-${{ github.run_id }}
           name: APK ${{ github.run_number }} — ${{ inputs.service-name }} v${{ steps.version.outputs.version }}
           prerelease: true
           files: ${{ inputs.service-name }}-${{ github.run_number }}.apk
@@ -166,7 +166,7 @@ jobs:
       - name: Summary
         run: |
           echo "### ${{ inputs.service-name }} v${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- per-push APK: https://github.com/${{ github.repository }}/releases/tag/apk-${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- per-push APK: https://github.com/${{ github.repository }}/releases/tag/apk-${{ github.run_id }}" >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ steps.release.outputs.released }}" = "true" ]; then
             echo "- semantic release: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.release.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
           fi
