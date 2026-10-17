@@ -1,0 +1,166 @@
+name: Mobile Release
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js version"
+        required: false
+        type: string
+        default: "22"
+      java-version:
+        description: "Java version for the Android build"
+        required: false
+        type: string
+        default: "17"
+      service-name:
+        description: "Service name used in release titles"
+        required: false
+        type: string
+        default: "quizup-mobile"
+      android-package:
+        description: "Android applicationId"
+        required: true
+        type: string
+      api-url:
+        description: "BFF URL inlined in the APK"
+        required: true
+        type: string
+      oidc-authority:
+        description: "OIDC issuer URL inlined in the APK"
+        required: true
+        type: string
+      oidc-client-id:
+        description: "OIDC public client id"
+        required: false
+        type: string
+        default: "mobile"
+    secrets:
+      GITHUB_PASSWORD:
+        description: "GitHub token (PAT) for semantic-release and release uploads"
+        required: true
+      ANDROID_KEYSTORE_BASE64:
+        description: "Base64-encoded Android release keystore"
+        required: true
+      ANDROID_KEYSTORE_PASSWORD:
+        description: "Android keystore password"
+        required: true
+      ANDROID_KEY_ALIAS:
+        description: "Android key alias"
+        required: true
+      ANDROID_KEY_PASSWORD:
+        description: "Android key password"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Semantic Release
+        id: release
+        uses: quizup-organization/quizup-reusable-workflows/actions/semantic-release@main
+        with:
+          node-version: ${{ inputs.node-version }}
+          release-profile: npm
+          github-token: ${{ secrets.GITHUB_PASSWORD }}
+
+      - name: Read app version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.java-version }}
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Decode Android keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+
+      - name: Expo prebuild (Android)
+        env:
+          ANDROID_PACKAGE: ${{ inputs.android-package }}
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
+          EXPO_PUBLIC_API_URL: ${{ inputs.api-url }}
+          EXPO_PUBLIC_OIDC_AUTHORITY: ${{ inputs.oidc-authority }}
+          EXPO_PUBLIC_OIDC_CLIENT_ID: ${{ inputs.oidc-client-id }}
+        run: npx expo prebuild --platform android --no-install --clean
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            android/app/.cxx
+          key: gradle-${{ runner.os }}-${{ hashFiles('package-lock.json', 'app.json', 'app.config.js', 'plugins/**') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Build release APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          EXPO_PUBLIC_API_URL: ${{ inputs.api-url }}
+          EXPO_PUBLIC_OIDC_AUTHORITY: ${{ inputs.oidc-authority }}
+          EXPO_PUBLIC_OIDC_CLIENT_ID: ${{ inputs.oidc-client-id }}
+        run: |
+          cd android
+          ./gradlew assembleRelease --no-daemon --build-cache --parallel -PreactNativeArchitectures=arm64-v8a
+
+      - name: Rename APK
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk \
+            "${{ inputs.service-name }}-${{ github.run_number }}.apk"
+
+      - name: Publish per-push APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: APK ${{ github.run_number }} — ${{ inputs.service-name }} v${{ steps.version.outputs.version }}
+          prerelease: true
+          files: ${{ inputs.service-name }}-${{ github.run_number }}.apk
+          body: |
+            Build Android **prod** de `${{ inputs.service-name }}`.
+            - version: `${{ steps.version.outputs.version }}`
+            - versionCode: `${{ github.run_number }}`
+            - commit: `${{ github.sha }}`
+            - package: `${{ inputs.android-package }}`
+            - API: `${{ inputs.api-url }}`
+
+      - name: Attach APK to semantic release
+        if: steps.release.outputs.released == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_PASSWORD }}
+        run: |
+          gh release upload "v${{ steps.release.outputs.version }}" \
+            "${{ inputs.service-name }}-${{ github.run_number }}.apk" --clobber
+
+      - name: Summary
+        run: |
+          echo "### ${{ inputs.service-name }} v${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- per-push APK: https://github.com/${{ github.repository }}/releases/tag/apk-${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.release.outputs.released }}" = "true" ]; then
+            echo "- semantic release: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.release.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          fi

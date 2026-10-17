@@ -13,8 +13,10 @@ Fournir des **actions GitHub Actions réutilisables** pour tous les repos QuizUp
 - **setup-java-maven** : setup du toolchain Java/Maven (versions gérées par le BOM)
 - **prune-packages** : purge des anciennes versions GHCR (rétention stockage)
 
-+ **Dockerfiles** partagés (`Dockerfile.service`, `Dockerfile.frontend`) et config
-**semantic-release** (versioning + changelog).
++ **Dockerfiles** partagés (`Dockerfile.service`, `Dockerfile.frontend`), config
+**semantic-release** (versioning + changelog) et workflows réutilisables :
+`frontend-ci`/`frontend-release`, `service-ci`/`service-release`, `lib-ci`/`lib-release`,
+**`mobile-ci`/`mobile-release`** (typecheck/doctor + APK Android signé sur `main`).
 
 + **Workflow planifié** `prune-packages.yml` : purge GHCR + packages Maven + caches Actions
 (allowance Free 0,5 GB partagée artefacts/Packages). Toutes les versions de `quizup-parent` sont
@@ -32,12 +34,18 @@ quizup-reusable-workflows/
 │   ├── semantic-release/    ← action composite : release versionnée
 │   ├── setup-java-maven/    ← action composite : setup Java/Maven
 │   └── prune-packages/      ← action composite : purge versions GHCR
+├── .github/workflows/        ← workflows réutilisables (frontend, service, lib, mobile)
 ├── docker/
 │   ├── Dockerfile.service    ← Dockerfile générique microservice
 │   └── Dockerfile.frontend   ← Dockerfile frontend (nginx)
 ├── maven/                    ← config Maven partagée (settings, etc.)
 └── semantic-release/         ← config semantic-release
 ```
+
+> `mobile-release` : semantic-release (profil `npm`, version dans `package.json` + `CHANGELOG.md`)
+> puis `expo prebuild` + `gradlew assembleRelease` (arm64), publication d'une pre-release
+> `apk-<run_number>` et attachement de l'APK à la release `v<version>`. Il attend les secrets
+> keystore Android du caller.
 
 ---
 
