@@ -75,7 +75,11 @@ jobs:
 
       - name: Read app version
         id: version
-        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          CODE=$(node -e "const [a,b,c]=require('./package.json').version.split('.').map(Number); console.log(a*1000000+b*1000+c)")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@v5
         with:
@@ -100,10 +104,10 @@ jobs:
       - name: Expo prebuild (Android)
         env:
           ANDROID_PACKAGE: ${{ inputs.android-package }}
-          ANDROID_VERSION_CODE: ${{ github.run_number }}
           EXPO_PUBLIC_API_URL: ${{ inputs.api-url }}
           EXPO_PUBLIC_OIDC_AUTHORITY: ${{ inputs.oidc-authority }}
           EXPO_PUBLIC_OIDC_CLIENT_ID: ${{ inputs.oidc-client-id }}
+          EXPO_PUBLIC_BUILD_RUN: ${{ github.run_number }}
         run: npx expo prebuild --platform android --no-install --clean
 
       - name: Cache Gradle
@@ -125,6 +129,7 @@ jobs:
           EXPO_PUBLIC_API_URL: ${{ inputs.api-url }}
           EXPO_PUBLIC_OIDC_AUTHORITY: ${{ inputs.oidc-authority }}
           EXPO_PUBLIC_OIDC_CLIENT_ID: ${{ inputs.oidc-client-id }}
+          EXPO_PUBLIC_BUILD_RUN: ${{ github.run_number }}
         run: |
           cd android
           ./gradlew assembleRelease --no-daemon --build-cache --parallel -PreactNativeArchitectures=arm64-v8a
@@ -144,7 +149,8 @@ jobs:
           body: |
             Build Android **prod** de `${{ inputs.service-name }}`.
             - version: `${{ steps.version.outputs.version }}`
-            - versionCode: `${{ github.run_number }}`
+            - versionCode: `${{ steps.version.outputs.code }}`
+            - build run: `${{ github.run_number }}`
             - commit: `${{ github.sha }}`
             - package: `${{ inputs.android-package }}`
             - API: `${{ inputs.api-url }}`
