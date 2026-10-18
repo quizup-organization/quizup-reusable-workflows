@@ -110,6 +110,7 @@ jobs:
         env:
           ANDROID_PACKAGE: ${{ inputs.android-package }}
           EXPO_PUBLIC_API_URL: ${{ inputs.api-url }}
+          EXPO_PUBLIC_IDENTITY_URL: ${{ inputs.oidc-authority }}
           EXPO_PUBLIC_OIDC_AUTHORITY: ${{ inputs.oidc-authority }}
           EXPO_PUBLIC_OIDC_CLIENT_ID: ${{ inputs.oidc-client-id }}
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ inputs.google-web-client-id }}
@@ -133,6 +134,7 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           EXPO_PUBLIC_API_URL: ${{ inputs.api-url }}
+          EXPO_PUBLIC_IDENTITY_URL: ${{ inputs.oidc-authority }}
           EXPO_PUBLIC_OIDC_AUTHORITY: ${{ inputs.oidc-authority }}
           EXPO_PUBLIC_OIDC_CLIENT_ID: ${{ inputs.oidc-client-id }}
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ inputs.google-web-client-id }}
