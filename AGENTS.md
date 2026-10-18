@@ -45,7 +45,8 @@ quizup-reusable-workflows/
 > `mobile-release` : semantic-release (profil `npm`, version dans `package.json` + `CHANGELOG.md`)
 > puis `expo prebuild` + `gradlew assembleRelease` (arm64), publication d'une pre-release
 > `apk-<run_number>` et attachement de l'APK à la release `v<version>`. Il attend les secrets
-> keystore Android du caller.
+> keystore Android du caller et reçoit `google-web-client-id` (client OAuth Web utilisé comme
+> audience des ID tokens Google, injecté dans `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`).
 
 ---
 
