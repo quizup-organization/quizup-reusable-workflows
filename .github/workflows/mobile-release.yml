@@ -40,6 +40,16 @@ on:
         required: false
         type: string
         default: ""
+      facebook-app-id:
+        description: "Facebook App ID (empty = Facebook hidden)"
+        required: false
+        type: string
+        default: ""
+      facebook-client-token:
+        description: "Facebook Client Token, public SDK value (empty = Facebook hidden)"
+        required: false
+        type: string
+        default: ""
     secrets:
       GITHUB_PASSWORD:
         description: "GitHub token (PAT) for semantic-release and release uploads"
@@ -114,6 +124,8 @@ jobs:
           EXPO_PUBLIC_OIDC_AUTHORITY: ${{ inputs.oidc-authority }}
           EXPO_PUBLIC_OIDC_CLIENT_ID: ${{ inputs.oidc-client-id }}
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ inputs.google-web-client-id }}
+          EXPO_PUBLIC_FACEBOOK_APP_ID: ${{ inputs.facebook-app-id }}
+          EXPO_PUBLIC_FACEBOOK_CLIENT_TOKEN: ${{ inputs.facebook-client-token }}
           EXPO_PUBLIC_BUILD_RUN: ${{ github.run_number }}
         run: npx expo prebuild --platform android --no-install --clean
 
@@ -138,6 +150,8 @@ jobs:
           EXPO_PUBLIC_OIDC_AUTHORITY: ${{ inputs.oidc-authority }}
           EXPO_PUBLIC_OIDC_CLIENT_ID: ${{ inputs.oidc-client-id }}
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ inputs.google-web-client-id }}
+          EXPO_PUBLIC_FACEBOOK_APP_ID: ${{ inputs.facebook-app-id }}
+          EXPO_PUBLIC_FACEBOOK_CLIENT_TOKEN: ${{ inputs.facebook-client-token }}
           EXPO_PUBLIC_BUILD_RUN: ${{ github.run_number }}
         run: |
           cd android
