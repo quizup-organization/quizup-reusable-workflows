@@ -40,6 +40,11 @@ on:
         required: false
         type: string
         default: ""
+      google-ios-client-id:
+        description: "Google OAuth iOS client id used for the URL scheme (empty = no iOS Google plugin)"
+        required: false
+        type: string
+        default: ""
       facebook-app-id:
         description: "Facebook App ID (empty = Facebook hidden)"
         required: false
@@ -124,6 +129,7 @@ jobs:
           EXPO_PUBLIC_OIDC_AUTHORITY: ${{ inputs.oidc-authority }}
           EXPO_PUBLIC_OIDC_CLIENT_ID: ${{ inputs.oidc-client-id }}
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ inputs.google-web-client-id }}
+          EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: ${{ inputs.google-ios-client-id }}
           EXPO_PUBLIC_FACEBOOK_APP_ID: ${{ inputs.facebook-app-id }}
           EXPO_PUBLIC_FACEBOOK_CLIENT_TOKEN: ${{ inputs.facebook-client-token }}
           EXPO_PUBLIC_BUILD_RUN: ${{ github.run_number }}
@@ -150,6 +156,7 @@ jobs:
           EXPO_PUBLIC_OIDC_AUTHORITY: ${{ inputs.oidc-authority }}
           EXPO_PUBLIC_OIDC_CLIENT_ID: ${{ inputs.oidc-client-id }}
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ inputs.google-web-client-id }}
+          EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: ${{ inputs.google-ios-client-id }}
           EXPO_PUBLIC_FACEBOOK_APP_ID: ${{ inputs.facebook-app-id }}
           EXPO_PUBLIC_FACEBOOK_CLIENT_TOKEN: ${{ inputs.facebook-client-token }}
           EXPO_PUBLIC_BUILD_RUN: ${{ github.run_number }}
