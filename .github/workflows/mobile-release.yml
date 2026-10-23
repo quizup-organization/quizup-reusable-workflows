@@ -146,7 +146,7 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      - name: Build release APK
+      - name: Build release APK and AAB
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
@@ -162,20 +162,24 @@ jobs:
           EXPO_PUBLIC_BUILD_RUN: ${{ github.run_number }}
         run: |
           cd android
-          ./gradlew assembleRelease --no-daemon --build-cache --parallel -PreactNativeArchitectures=arm64-v8a
+          ./gradlew assembleRelease bundleRelease --no-daemon --build-cache --parallel -PreactNativeArchitectures=arm64-v8a
 
-      - name: Rename APK
+      - name: Rename Android artifacts
         run: |
           cp android/app/build/outputs/apk/release/app-release.apk \
             "${{ inputs.service-name }}-${{ github.run_number }}.apk"
+          cp android/app/build/outputs/bundle/release/app-release.aab \
+            "${{ inputs.service-name }}-${{ github.run_number }}.aab"
 
-      - name: Publish per-push APK
+      - name: Publish per-push Android artifacts
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-${{ github.run_id }}
-          name: APK ${{ github.run_number }} — ${{ inputs.service-name }} v${{ steps.version.outputs.version }}
+          name: APK/AAB ${{ github.run_number }} — ${{ inputs.service-name }} v${{ steps.version.outputs.version }}
           prerelease: true
-          files: ${{ inputs.service-name }}-${{ github.run_number }}.apk
+          files: |
+            ${{ inputs.service-name }}-${{ github.run_number }}.apk
+            ${{ inputs.service-name }}-${{ github.run_number }}.aab
           body: |
             Build Android **prod** de `${{ inputs.service-name }}`.
             - version: `${{ steps.version.outputs.version }}`
@@ -184,19 +188,22 @@ jobs:
             - commit: `${{ github.sha }}`
             - package: `${{ inputs.android-package }}`
             - API: `${{ inputs.api-url }}`
+            - APK: test direct sur appareil
+            - AAB: upload manuel Play Console (ou internal track)
 
-      - name: Attach APK to semantic release
+      - name: Attach Android artifacts to semantic release
         if: steps.release.outputs.released == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_PASSWORD }}
         run: |
           gh release upload "v${{ steps.release.outputs.version }}" \
-            "${{ inputs.service-name }}-${{ github.run_number }}.apk" --clobber
+            "${{ inputs.service-name }}-${{ github.run_number }}.apk" \
+            "${{ inputs.service-name }}-${{ github.run_number }}.aab" --clobber
 
       - name: Summary
         run: |
           echo "### ${{ inputs.service-name }} v${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- per-push APK: https://github.com/${{ github.repository }}/releases/tag/apk-${{ github.run_id }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- per-push APK/AAB: https://github.com/${{ github.repository }}/releases/tag/apk-${{ github.run_id }}" >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ steps.release.outputs.released }}" = "true" ]; then
             echo "- semantic release: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.release.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
           fi
